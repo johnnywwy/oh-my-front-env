@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oh-my-development-env
+    volumes:
+      - ~/.ssh:/root/.ssh  # 挂载本地的 .ssh 目录到容器中的 /root/.ssh
+      # - .:/app  # 挂载当前目录到容器中的 /app
+    working_dir: /app  # 设置工作目录为 /app
+    ports:
+      - "3000:3000"  # 将容器的端口 3000 映射到主机的端口 3000
+    stdin_open: true
+    tty: true
+    environment:
+      - NODE_ENV=development  # 设置环境变量，视你的需求而定

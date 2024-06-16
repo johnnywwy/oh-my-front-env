@@ -11,8 +11,16 @@ RUN apt-get update && apt-get install -y \
   tree \
   htop
 
+
+# 设置环境变量以确保使用 UTF-8 编码
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
 # 设置默认 shell 为 zsh
-SHELL ["/bin/zsh", "-c"]
+RUN chsh -s /bin/zsh root
+
+
 
 # 安装 nvm
 ENV NVM_DIR /root/.nvm
@@ -25,13 +33,22 @@ RUN bash -c "source $NVM_DIR/nvm.sh && \
   nvm use default"
 
 # 安装 Oh My Zsh
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
-# 设置 Oh My Zsh 主题 (例如 "agnoster" 主题)
-# RUN sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="agnoster"/g' ~/.zshrc
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
+  chsh -s $(which zsh)
 
 
-# 配置 zshrc
+# 安装 zsh-autosuggestions 和 zsh-syntax-highlighting 插件
+RUN git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-/root/.oh-my-zsh/custom}/plugins/zsh-autosuggestions && \
+  git clone https://github.com/zsh-users/zsh-syntax-highlighting ${ZSH_CUSTOM:-/root/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+
+# 写入 .zshrc 文件
+RUN echo 'export ZSH="/root/.oh-my-zsh"' > /root/.zshrc && \
+  echo 'ZSH_THEME="robbyrussell"' >> /root/.zshrc && \
+  echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting)' >> /root/.zshrc && \
+  echo 'source $ZSH/oh-my-zsh.sh' >> /root/.zshrc
+
+
+# 配置 nvm
 RUN echo '' >> /root/.zshrc && \
   echo 'export NVM_DIR="$HOME/.nvm"' >> /root/.zshrc && \
   echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /root/.zshrc && \
@@ -45,19 +62,22 @@ RUN bash -c "source $NVM_DIR/nvm.sh && \
   npm install -g pnpm"
 
 # 设置工作目录
-# WORKDIR /app
+WORKDIR /app
 
 # 复制 package.json 和 package-lock.json 到工作目录
 # COPY package*.json ./
 
 # 安装项目依赖
-# RUN bash -c "source $NVM_DIR/nvm.sh"
+RUN bash -c "source $NVM_DIR/nvm.sh"
 
 # 复制项目文件到工作目录
 # COPY . .
 
+
+# 运行时挂载 .ssh 目录
+VOLUME ["/root/.ssh"]
 # 暴露端口
-# EXPOSE 3000
+# EXPOSE 3308 8082 3000
 
 # 启动应用
 # CMD ["zsh", "-c", "source $NVM_DIR/nvm.sh && pnpm install && pnpm start"]
